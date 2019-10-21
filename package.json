@@ -1,0 +1,22 @@
+{
+  "name": "discord-server-change",
+  "version": "1.0.0",
+  "description": "Literally all it does is change Discord servers",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Decicus/discord-server-change.git"
+  },
+  "author": "Alex Thomassen",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Decicus/discord-server-change/issues"
+  },
+  "homepage": "https://github.com/Decicus/discord-server-change#readme",
+  "dependencies": {
+    "discord.js": "^11.5.1"
+  }
+}
