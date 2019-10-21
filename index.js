@@ -5,6 +5,11 @@ const config = require('./config.js');
 const client = new DiscordJs.Client();
 const codeTicks = '```';
 
+client.on('ready', () => {
+    const user = client.user;
+    console.log(`Logged in as ${user.username}#${user.discriminator}`);
+});
+
 /**
  * Handle region change
  */
@@ -30,11 +35,12 @@ client.on('message', async (message) => {
     }
 
     const guild = message.guild;
+    let regions;
     try {
-        let regions = await guild.fetchVoiceRegions();
+        regions = await guild.fetchVoiceRegions();
     }
     catch (err) {
-        await message.reply(`${message.author} - Unable to get voice regions.`);
+        await message.reply(`Unable to get voice regions.`);
         console.error(err);
         return;
     }
@@ -71,12 +77,12 @@ client.on('message', async (message) => {
     }
 
     try {
-        await guild.setRegion(getRegion, `Voice region updated to ${selectedRegion} by ${user.username}#${user.discriminator}.`);
-        await message.reply(`${member} - Voice region updated to: ${getRegion}`);
+        await guild.setRegion(getRegion.id, `Voice region updated to ${selectedRegion} by ${user.username}#${user.discriminator}.`);
+        await message.reply(`Voice region updated to: ${getRegion.name} [${getRegion.id}]`);
     }
     catch (err)
     {
-        await message.reply(`${member} - Error updating region.`);
+        await message.reply('Error updating region.');
         console.error(err);
     }
 });
