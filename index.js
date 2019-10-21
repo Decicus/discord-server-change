@@ -75,11 +75,13 @@ client.on('message', async (message) => {
 
     try {
         await guild.setRegion(getRegion.id, `Voice region updated to ${selectedRegion} by ${user.username}#${user.discriminator}.`);
+        console.log(`Voice region updated for ${guild.name} [${guild.id}] to ${selectedRegion} by ${user.username}#${user.discriminator}.`);
         await message.reply(`Voice region updated to: ${getRegion.name} [${getRegion.id}]`);
     }
     catch (err)
     {
         await message.reply('Error updating region.');
+        console.error(`Could not update voice region on server ${guild.name} [${guild.id}].`);
         console.error(err);
     }
 });
