@@ -56,6 +56,7 @@ client.on('message', async(message) => {
         return;
     }
 
+    const guild = message.guild;
     try {
         await guild.setRegion(region, `Voice region updated to ${region} by ${user.username}#${user.discriminator}.`);
         console.log(`Voice region updated for ${guild.name} [${guild.id}] to ${region} by ${user.username}#${user.discriminator}.`);
