@@ -1,6 +1,7 @@
 # discord-server-change
 
-Change Discord servers via a command.
+This is a quick-and-dirty implementation of a bot that allows you to easily change voice server region with commands.  
+Only reason this exists is because the Europe servers always die, so I needed something that required the least amount of clicking.
 
 The bot requires, at minimum, `Manage Server` permission to change the server regions.
 
