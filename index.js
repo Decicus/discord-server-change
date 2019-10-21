@@ -49,7 +49,7 @@ client.on('message', async (message) => {
      * Find regions that are still available to switch to.
      */
     regions = regions.filter((region) => {
-        return region.deprecated;
+        return !region.deprecated;
     });
 
     const formatRegions = regions.map((region) => {
