@@ -45,7 +45,7 @@ client.on('message', async(message) => {
     const params = content.split(' ');
     const prefix = content[0];
 
-    if (cmd !== '&') {
+    if (prefix !== '&') {
         return;
     }
 
