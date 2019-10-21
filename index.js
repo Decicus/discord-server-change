@@ -11,6 +11,64 @@ client.on('ready', () => {
 });
 
 /**
+ * Region aliases
+ */
+const aliases = {
+    'use': 'us-east',
+    'usw': 'us-west',
+    'usc': 'us-central',
+    'uss': 'us-south',
+    'eu': 'europe',
+    'ru': 'russia',
+    'sy': 'sydney',
+    'in': 'india',
+    'ja': 'japan',
+};
+
+/**
+ * Handle region aliases
+ */
+client.on('message', async(message) => {
+    const member = message.member;
+    const user = message.author;
+
+    if (!member) {
+        return;
+    }
+
+    const canMoveRegion = member.hasPermission(Permissions.MANAGE_GUILD, false, true, true);
+    if (!canMoveRegion) {
+        return;
+    }
+
+    const content = message.cleanContent;
+    const params = content.split(' ');
+    const prefix = content[0];
+
+    if (cmd !== '&') {
+        return;
+    }
+
+    const alias = params[0].replace('&', '');
+    const region = aliases[alias];
+
+    if (!region) {
+        return;
+    }
+
+    try {
+        await guild.setRegion(region, `Voice region updated to ${region} by ${user.username}#${user.discriminator}.`);
+        console.log(`Voice region updated for ${guild.name} [${guild.id}] to ${region} by ${user.username}#${user.discriminator}.`);
+        await message.reply(`Voice region updated to: ${region}`);
+    }
+    catch (err) {
+        await message.reply('Error updating region.');
+        console.error(`Could not update voice region on server ${guild.name} [${guild.id}] to ${region}.`);
+        console.error(err);
+    }
+});
+
+/**
  * Handle region change
  */
 client.on('message', async (message) => {
@@ -44,6 +102,13 @@ client.on('message', async (message) => {
         console.error(err);
         return;
     }
+
+    /**
+     * Sort deprecated regions as last.
+     */
+    regions = regions.sort((first, second) => {
+        return first.deprecated - second.deprecated;
+    });
 
     const formatRegions = regions.map((region) => {
         let format = `${region.name} [${region.id}]`;

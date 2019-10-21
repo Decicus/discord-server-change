@@ -2,6 +2,8 @@
 
 Change Discord servers via a command.
 
+The bot requires, at minimum, `Manage Server` permission to change the server regions.
+
 ## Usage
 
 The following members can use the command(s):
@@ -13,6 +15,20 @@ The following members can use the command(s):
 ### Change server
 
 `!v region-id`
+
+### Use region command aliases instead
+
+```
+&use => us-east
+&usw => us-west
+&usc => us-central
+&uss => us-south
+&eu => europe
+&ru => russia
+&sy => sydney
+&in => india
+&ja => japan
+```
 
 ### List available regions
 
@@ -43,5 +59,5 @@ The following members can use the command(s):
 - Russia [russia]
 
 
-Usage: !v region-id
+Usage => !v region-id
 ```
