@@ -47,7 +47,13 @@ client.on('message', async (message) => {
     });
 
     const formatRegions = regions.map((region) => {
-        return `${region.name} [${region.id}]`;
+        let format = `${region.name} [${region.id}]`;
+
+        if (region.vip) {
+            format += ' (VIP)';
+        }
+
+        return format;
     });
 
     const selectedRegion = params[1];
