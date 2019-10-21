@@ -45,18 +45,15 @@ client.on('message', async (message) => {
         return;
     }
 
-    /**
-     * Find regions that are still available to switch to.
-     */
-    regions = regions.filter((region) => {
-        return !region.deprecated;
-    });
-
     const formatRegions = regions.map((region) => {
         let format = `${region.name} [${region.id}]`;
 
+        if (region.deprecated) {
+            format += ' [Deprecated!]';
+        }
+
         if (region.vip) {
-            format += ' (VIP)';
+            format += ' [VIP]';
         }
 
         return format;
@@ -85,6 +82,11 @@ client.on('message', async (message) => {
         await message.reply('Error updating region.');
         console.error(err);
     }
+});
+
+process.on('SIGINT', async () => {
+    await client.destroy();
+    process.exit(0);
 });
 
 client.login(config.Discord.token);
