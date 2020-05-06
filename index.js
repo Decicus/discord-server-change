@@ -26,6 +26,15 @@ const aliases = {
 };
 
 /**
+ * Checks if a member has the guild permissions to move regions.
+ * 
+ * @param {DiscordJs.GuildMember} member https://discord.js.org/#/docs/main/stable/class/GuildMember
+ */
+const canMoveRegion = (member) => {
+    return member.hasPermission(Permissions.MANAGE_GUILD, false, true, true);
+};
+
+/**
  * Handle region aliases
  */
 client.on('message', async(message) => {
@@ -36,8 +45,7 @@ client.on('message', async(message) => {
         return;
     }
 
-    const canMoveRegion = member.hasPermission(Permissions.MANAGE_GUILD, false, true, true);
-    if (!canMoveRegion) {
+    if (!canMoveRegion(member)) {
         return;
     }
 
@@ -70,6 +78,55 @@ client.on('message', async(message) => {
 });
 
 /**
+ * `!region` command: Reply with current guild region.
+ */
+client.on('message', async (message) => {
+    const content = message.cleanContent;
+    const params = content.split(' ');
+
+    if (params[0].toLowerCase() !== "!region") {
+        return;
+    }
+
+    /**
+     * Direct Messages do not contain a GuildMember struct.
+     */
+    const {member} = message;
+    if (!member) {
+        return;
+    }
+
+    if (!canMoveRegion(member)) {
+        return;
+    }
+
+    const guild = message.guild;
+    let regions;
+    try {
+        regions = await guild.fetchVoiceRegions();
+    } catch (err) {
+        console.error(err);
+    }
+
+    let region = guild.region;
+
+    if (regions !== undefined) {
+        const findRegion = regions.get(region);
+        region = findRegion.name;
+
+        if (findRegion.deprecated) {
+            region += ' [Deprecated]';
+        }
+
+        if (findRegion.vip) {
+            region += ' [VIP]';
+        }
+    }
+
+    await message.reply(`Current server region: ${region}`);
+});
+
+/**
  * Handle region change
  */
 client.on('message', async (message) => {
@@ -80,8 +137,7 @@ client.on('message', async (message) => {
         return;
     }
 
-    const canMoveRegion = member.hasPermission(Permissions.MANAGE_GUILD, false, true, true);
-    if (!canMoveRegion) {
+    if (!canMoveRegion(member)) {
         return;
     }
 
