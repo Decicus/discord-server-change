@@ -1,7 +1,7 @@
 {
   "name": "discord-server-change",
-  "version": "1.0.0",
-  "description": "Literally all it does is change Discord servers",
+  "version": "1.1.0",
+  "description": "Allows changing Discord voice regions for a server using chat commands",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -17,6 +17,6 @@
   },
   "homepage": "https://github.com/Decicus/discord-server-change#readme",
   "dependencies": {
-    "discord.js": "^11.5.1"
+    "discord.js": "^12.2.0"
   }
 }

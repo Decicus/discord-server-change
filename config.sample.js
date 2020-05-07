@@ -1,9 +1,9 @@
 const config = {
     Discord: {
         /**
-         * Bot token for logging into Discord.
+         * Add your Discord bot token here.
          */
-        token: '',
+        token: 'REPLACE_WITH_DISCORD_BOT_TOKEN',
     },
 };
 
