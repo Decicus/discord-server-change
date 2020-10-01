@@ -22,6 +22,8 @@ You have two choices:
 - Navigate to the folder and run `npm install`: `cd discord-server-change && npm install`
 - Copy the file `config.sample.js` to `config.js`.
 - Open **`config.js`** with a _text editor_ and add your [Discord bot token](https://www.writebots.com/discord-bot-token/)
+    - The configuration option `Discord.allowEveryoneToMoveRegion` can be used to decide if **everyone in the server** (regardless of permissions) can move server regions.
+    - I recommend leaving `Discord.allowEveryoneToMoveRegion` to `false` if you're hosting it on a public server, but it's useful for private servers with just friends.
 - Run the bot using `node index.js`.
     - If it runs successfully then I recommend setting it up as a service using [PM2 (process manager)][PM2-QS].
 - [Generate an invite URL][Discord-Invite] to add it to your server.
@@ -33,11 +35,15 @@ You have two choices:
 
 ## Usage
 
-The following server members can use the command(s):
+If the configuration option `Discord.allowEveryoneToMoveRegion` is set to `false` (default), then the following server members can use the commands:
 
 - Any server member with `Manage Server` (`MANAGE_GUILD`) permission.
 - Any server member with `Administrator` permission.
 - The server owner.
+
+If the configuration option `Discord.allowEveryoneToMoveRegion` is set to `true`, then **everyone** can use the commands - regardless of server permissions.
+
+For public servers, I recommend leaving `Discord.allowEveryoneToMoveRegion` to `false`.
 
 Keep in mind that commands will only work inside a text channel on the server.  
 Sending the bot a _direct message_ will **not** work.
@@ -53,6 +59,12 @@ Sending the bot a _direct message_ will **not** work.
 `!v region-id`
 
 ### Use region command aliases instead
+
+`&use`
+
+> @Decicus, Voice region updated to: us-east
+
+#### List of region command aliases
 
 ```
 &use => us-east

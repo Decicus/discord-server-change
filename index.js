@@ -27,10 +27,15 @@ const aliases = {
 
 /**
  * Checks if a member has the guild permissions to move regions.
- * 
+ *
  * @param {DiscordJs.GuildMember} member https://discord.js.org/#/docs/main/12.2.0/class/GuildMember
  */
 const canMoveRegion = (member) => {
+    /**
+     * Config flag:
+     * Allows everyone in the server to move server region.
+     */
+    const everyoneCanMove = config.Discord.allowEveryoneToMoveRegion || false;
     const options = {
         /**
          * Check if GuildMember is the owner,
@@ -45,13 +50,30 @@ const canMoveRegion = (member) => {
         checkAdmin: true,
     };
 
-    return member.hasPermission(Permissions.MANAGE_GUILD, options);
+    const hasGuildPermission = member.hasPermission(Permissions.MANAGE_GUILD, options);
+    if (everyoneCanMove) {
+        /**
+         * The user only has permission to move regions because of `Discord.allowEveryoneToMoveRegion`
+         *
+         */
+        if (!hasGuildPermission) {
+            const user = member.user;
+            const username = `${user.username}#${user.discriminator}`;
+            const guild = member.guild;
+
+            console.log(`[AllowEveryoneToMoveRegion] Permit user '${username}' (${user.id}) in server '${guild.name}' (${guild.id})`);
+        }
+
+        return true;
+    }
+
+    return hasGuildPermission;
 };
 
 /**
  * To prevent abuse, restrict servers to execute commands once every X time.
  * See `checkCooldown()`.
- * 
+ *
  * Object format: {
  *      'guildId': {lastCommand: 'timestamp'},
  * }
@@ -64,7 +86,7 @@ const minimumSeconds = 2;
 
 /**
  * Check per-Guild cooldown.
- * 
+ *
  * @param {String} guildId
  * @param {String} cmd Command
  * @returns {Promise<Boolean>} True if command should continue, false if it should be aborted.
@@ -88,7 +110,7 @@ const checkCooldown = async (guildId, cmd) => {
     /**
      * If `lastCooldown` plus the `minimumTime` is less than `now`
      * then more time has passed since the cooldown was applied and valid.
-     * 
+     *
      * If that's the case, then it returns `true` and should let the command continue.
      * Otherwise it's `false` and should block the current command attempt.
      */
@@ -97,8 +119,8 @@ const checkCooldown = async (guildId, cmd) => {
 
 /**
  * Update the cooldown for the Guild.
- * 
- * @param {String} guildId 
+ *
+ * @param {String} guildId
  * @param {String} cmd Command
  */
 const updateCooldown = async (guildId, cmd) => {
