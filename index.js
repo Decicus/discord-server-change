@@ -97,10 +97,16 @@ const canMoveRegion = (member) => {
  * }
  */
 const cooldowns = {};
+
 /**
  * Minimum time between commands
  */
 const minimumSeconds = 2;
+
+/**
+ * Message to send when bot lacks the correct permissions to move voice regions.
+ */
+const botNoPermissionsMessage = `The bot (${client.user.mention}) lacks the permissions to change server regions. Please assign the "Manage Channels" permission to the bot.\nIf you were previously using this bot with the "Manage Server" permission, you can remove that. The permission change is necessary because of a Discord update: https://support.discord.com/hc/en-us/articles/360060570993-Voice-Regions-Update`;
 
 /**
  * Helper function for replying to messages.
@@ -248,10 +254,7 @@ async function handleRegionAliases(message)
     const guild = client.guilds.get(guildId);
     const canBotMoveRegion = checkSelfPermissions(guild);
     if (!canBotMoveRegion) {
-        await messageReply(
-            message,
-            `The bot (${client.user.mention}) lacks the permissions to change server regions. Please assign the "Manage Channels" permission to the bot.\nIf you were previously using this bot with the "Manage Server" permission, you can remove that. The permission change is necessary because of a Discord update: https://support.discord.com/hc/en-us/articles/360060570993-Voice-Regions-Update`
-        );
+        await messageReply(message, botNoPermissionsMessage);
         return;
     }
 
@@ -428,16 +431,16 @@ cmds.v = async (message, params) => {
         return;
     }
 
-    const voiceChannel = guild.channels.get(voiceId);
-    const cmd = 'v';
-    const cooldownAllow = checkCooldown(voiceId, cmd);
-    if (!cooldownAllow) {
-        console.log(
-            `${guild.name} (${guildId}) => ${voiceChannel.name} (${voiceId}) is still on cooldown, ignoring command: ${cmd}`
-        );
+    /**
+     * Check bot's permissions to make sure that it can actually change server regions.
+     */
+    const canBotMoveRegion = checkSelfPermissions(guild);
+    if (!canBotMoveRegion) {
+        await messageReply(message, botNoPermissionsMessage);
         return;
     }
 
+    const voiceChannel = guild.channels.get(voiceId);
     try {
         const channelOpts = {
             rtcRegion: selectedRegion,
