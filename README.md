@@ -3,7 +3,7 @@
 This is a quick-and-dirty implementation of a bot that allows you to easily change voice server region with commands.  
 Only reason this exists is because the Europe servers always die, so I needed something that required the least amount of clicking.
 
-The bot requires, at minimum, `Manage Server` permission to change the server regions.
+The bot requires, at minimum, `Manage Channels` permission to change the voice channel regions.
 
 ## Add to your server
 
@@ -30,14 +30,14 @@ You have two choices:
     - Make sure to specify your client ID in your bot application.
 - Test the bot by using one of the commands, such as `!region`.
 
-[Discord-Invite]: https://discordapi.com/permissions.html#32
+[Discord-Invite]: https://discordapi.com/permissions.html#16
 [PM2-QS]: https://pm2.keymetrics.io/docs/usage/quick-start/
 
 ## Usage
 
 If the configuration option `Discord.allowEveryoneToMoveRegion` is set to `false` (default), then the following server members can use the commands:
 
-- Any server member with `Manage Server` (`MANAGE_GUILD`) permission.
+- Any server member with `Manage Channels` (`manageChannels`) permission.
 - Any server member with `Administrator` permission.
 - The server owner.
 
@@ -47,6 +47,9 @@ For public servers, I recommend leaving `Discord.allowEveryoneToMoveRegion` to `
 
 Keep in mind that commands will only work inside a text channel on the server.  
 Sending the bot a _direct message_ will **not** work.
+
+The user running the command will also need to be connected to the voice channel they would like to change regions for.  
+In the future the bot will allow typing part of the channel name, as long as the "part" matches only one channel.
 
 ### Display current server region
 

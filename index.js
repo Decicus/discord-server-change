@@ -1,8 +1,19 @@
-const DiscordJs = require('discord.js');
-const Permissions = DiscordJs.Permissions.FLAGS;
+const eris = require('eris');
+const Permissions = eris.Constants.Permissions;
 const config = require('./config.js');
 
-const client = new DiscordJs.Client();
+const clientOpts = {
+    compress: true,
+};
+
+/**
+ * @type {eris.Client}
+ */
+const client = new eris(`Bot ${config.Discord.token}`, clientOpts);
+
+/**
+ * @type {String}
+ */
 const codeTicks = '```';
 
 client.on('ready', () => {
@@ -12,6 +23,8 @@ client.on('ready', () => {
 
 /**
  * Region aliases
+ *
+ * @type {Object}
  */
 const aliases = {
     'use': 'us-east',
@@ -23,12 +36,13 @@ const aliases = {
     'sy': 'sydney',
     'in': 'india',
     'ja': 'japan',
+    'auto': null,
 };
 
 /**
  * Checks if a member has the guild permissions to move regions.
  *
- * @param {DiscordJs.GuildMember} member https://discord.js.org/#/docs/main/12.2.0/class/GuildMember
+ * @param {eris.Member} member https://abal.moe/Eris/docs/Member
  */
 const canMoveRegion = (member) => {
     /**
@@ -36,29 +50,33 @@ const canMoveRegion = (member) => {
      * Allows everyone in the server to move server region.
      */
     const everyoneCanMove = config.Discord.allowEveryoneToMoveRegion || false;
-    const options = {
-        /**
-         * Check if GuildMember is the owner,
-         * thus overriding all permissions
-         */
-        checkOwner: true,
 
-        /**
-         * Check if the GuildMember has the `administrator` permission
-         * via one of their roles.
-         */
-        checkAdmin: true,
-    };
+    /**
+     * Check if the guild member has the `Administrator` permission.
+     */
+    const isAdmin = member.permissions.has(Permissions.administrator);
 
-    const hasGuildPermission = member.hasPermission(Permissions.MANAGE_GUILD, options);
+    /**
+     * .. or if they're the server owner.
+     */
+    const isOwner = member.id === member.guild.ownerID;
+
+    /**
+     * Checks for the "Manage Channels" permission.
+     *
+     * At the moment this does not check for permissions that are set on channels/categories
+     * only 'globally' in the guild.
+     */
+    const canManageChannels = member.permissions.has(Permissions.manageChannels);
+
+    const hasGuildPermission = canManageChannels || isAdmin || isOwner;
     if (everyoneCanMove) {
         /**
          * The user only has permission to move regions because of `Discord.allowEveryoneToMoveRegion`
          *
          */
         if (!hasGuildPermission) {
-            const user = member.user;
-            const username = `${user.username}#${user.discriminator}`;
+            const username = `${member.username}#${member.discriminator}`;
             const guild = member.guild;
 
             console.log(`[AllowEveryoneToMoveRegion] Permit user '${username}' (${user.id}) in server '${guild.name}' (${guild.id})`);
@@ -85,27 +103,67 @@ const cooldowns = {};
 const minimumSeconds = 2;
 
 /**
- * Check per-Guild cooldown.
+ * Helper function for replying to messages.
  *
- * @param {String} guildId
- * @param {String} cmd Command
- * @returns {Promise<Boolean>} True if command should continue, false if it should be aborted.
+ * @param {eris.Message} message
+ * @param {String} text
+ * @returns {Promise<eris.Message>} The sent message
  */
-const checkCooldown = async (guildId, cmd) => {
+async function messageReply(message, text)
+{
+    const user = message.author;
+    const channel = message.channel;
+
+    const messageOpts = {
+        allowedMentions: {
+            everyone: false,
+            repliedUser: true,
+            users: [user.id, client.user.id],
+        },
+        content: text,
+        messageReference: {
+            messageID: message.id,
+        },
+    };
+
+    return channel.createMessage(messageOpts);
+}
+
+/**
+ * Checks if the client bot has permissions
+ *
+ * @param {eris.Guild} guild
+ * @return {Boolean}
+ */
+function checkSelfPermissions(guild)
+{
+    const permissions = guild.permissionsOf(client.user.id);
+    return permissions.has(Permissions.manageChannels) || permissions.has(Permissions.administrator);
+}
+
+/**
+ * Check per-VoiceChannel cooldown.
+ *
+ * @param {String} channelId
+ * @param {String} cmd Command
+ * @returns {Boolean} True if command should continue, false if it should be aborted.
+ */
+function checkCooldown(channelId, cmd)
+{
     // Current timestamp in milliseconds
     const now = Date.now();
 
-    if (!cooldowns[guildId]) {
-        cooldowns[guildId] = {};
-        cooldowns[guildId][cmd] = now;
+    if (!cooldowns[channelId]) {
+        cooldowns[channelId] = {};
+        cooldowns[channelId][cmd] = now;
 
-        console.log(`No cooldown exists for ${guildId} and command ${cmd} - Setting it to: ${now}`);
+        console.log(`No cooldown exists for ${channelId} and command ${cmd} - Setting it to: ${now}`);
         return true;
     }
 
     // Need this in milliseconds.
     const minimumTime = minimumSeconds * 1000;
-    const lastCooldown = cooldowns[guildId][cmd] || 0;
+    const lastCooldown = cooldowns[channelId][cmd] || 0;
 
     /**
      * If `lastCooldown` plus the `minimumTime` is less than `now`
@@ -115,30 +173,34 @@ const checkCooldown = async (guildId, cmd) => {
      * Otherwise it's `false` and should block the current command attempt.
      */
     return (lastCooldown + minimumTime) < now;
-};
+}
 
 /**
- * Update the cooldown for the Guild.
+ * Update the cooldown for the VoiceChannel.
  *
- * @param {String} guildId
+ * @param {String} channelId
  * @param {String} cmd Command
  */
-const updateCooldown = async (guildId, cmd) => {
+function updateCooldown(channelId, cmd)
+{
     const now = Date.now();
-    console.log(`Updated cooldown for ${guildId}: ${now}`);
+    console.log(`Updated cooldown for ${channelId}: ${now}`);
 
-    if (!cooldowns[guildId]) {
-        cooldowns[guildId] = {};
+    if (!cooldowns[channelId]) {
+        cooldowns[channelId] = {};
     }
 
-    cooldowns[guildId][cmd] = now;
+    cooldowns[channelId][cmd] = now;
 };
 
 /**
  * Handle region aliases
+ *
+ * @param {eris.Message} message https://abal.moe/Eris/docs/Message
  */
-client.on('message', async(message) => {
-    const content = message.cleanContent;
+async function handleRegionAliases(message)
+{
+    const content = message.content;
     const params = content.split(' ');
     const prefix = content[0];
 
@@ -147,92 +209,163 @@ client.on('message', async(message) => {
     }
 
     const alias = params[0].replace('&', '');
-    const region = aliases[alias];
+    const validAliases = Object.keys(aliases);
 
-    if (!region) {
+    /**
+     * No region alias found
+     */
+    if (validAliases.includes(alias)) {
         return;
     }
 
+    /**
+     * Message was not sent in a guild
+     */
     const member = message.member;
     if (!member) {
         return;
     }
 
+    /**
+     * Member is not allowed to modify channel regions.
+     */
     if (!canMoveRegion(member)) {
         return;
     }
 
-    const user = message.author;
-    const guild = message.guild;
-    // Use `v` because region aliases.
-    const cmd = 'v';
-    const guildId = guild.id;
-    const cooldown = await checkCooldown(guildId, cmd);
+    /**
+     * Member is not connected to a voice channel.
+     * In the future this should accept a parameter for "Channel Name"
+     */
+    const voiceState = member.voiceState;
+    const voiceChannelId = voiceState.channelID;
+    if (!voiceChannelId) {
+        await messageReply(message, `You are currently not connected to a voice channel.`);
+        return;
+    }
 
-    if (!cooldown) {
+    const guildId = message.guildID;
+    const guild = client.guilds.get(guildId);
+    const canBotMoveRegion = checkSelfPermissions(guild);
+    if (!canBotMoveRegion) {
+        await messageReply(message, `The bot (${client.user.mention}) lacks the permissions to change server regions. Please assign the "Manage Channels" permission to the bot.`);
+        return;
+    }
+
+    const region = aliases[alias];
+    const user = message.author;
+    const voiceChannel = guild.channels.get(voiceChannelId);
+
+    // Use `v` because it's a region alias.
+    const cmd = 'v';
+
+    const cooldownAllow = checkCooldown(voiceChannelId, cmd);
+    if (!cooldownAllow) {
         console.log(
-            `${guild.name} (${guildId}) is still on cooldown, ignoring command: ${cmd}`
+            `${guild.name} (${guildId}) => ${voiceChannel.name} (${voiceChannelId}) is still on cooldown, ignoring command: ${cmd}`
         );
         return;
     }
 
+    const channelSettings = {
+        rtcRegion: region,
+    };
+
     try {
-        await guild.setRegion(region, `Voice region updated to ${region} by ${user.username}#${user.discriminator}.`);
-        console.log(`Voice region updated for ${guild.name} [${guild.id}] to ${region} by ${user.username}#${user.discriminator}.`);
-        await message.reply(`Voice region updated to: ${region}`);
+        await voiceChannel.edit(channelSettings, `Voice region updated to ${region} by ${user.username}#${user.discriminator}.`);
+        console.log(`Voice region updated for ${guild.name} [${guild.id}] => ${voiceChannel.name} [${voiceChannelId}] to ${region} by ${user.username}#${user.discriminator}.`);
+        await messageReply(message, ` Voice region updated to ${region} for channel: ${voiceChannel.name}`);
     }
     catch (err) {
-        await message.reply('Error updating region.');
-        console.error(`Could not update voice region on server ${guild.name} [${guild.id}] to ${region}.`);
+        await messageReply(message, `Error updating region.`);
+        console.error(`Could not update voice region on server ${guild.name} [${guild.id}] => ${voiceChannel.name} [${voiceChannelId}] to ${region}.`);
         console.error(err);
     }
 
-    await updateCooldown(guildId, cmd);
-});
+    updateCooldown(voiceChannelId, cmd);
+}
 
 const cmds = {};
 
 /**
- * Reply with current voice region for the guild.
+ * Reply with current voice region for the VoiceChannel.
+ *
+ * @param {eris.Message} Message
+ * @param {Array<String>} params
  */
 cmds.region = async (message, params) => {
-    const guild = message.guild;
+    const member = message.member;
+    if (!member) {
+        return;
+    }
+
+    const voiceState = member.voiceState;
+    const voiceId = voiceState.channelID;
+    if (!voiceId) {
+        await messageReply(message, 'You are currently not connected to a voice channel. Connect to a voice channel and try again.');
+        return;
+    }
+
+    const guildId = message.guildID;
+    const guild = client.guilds.get(guildId);
+    const voiceChannel = guild.channels.get(voiceId);
+
+    /**
+     * @type {Array}
+     */
     let regions;
     try {
-        regions = await guild.fetchVoiceRegions();
+        regions = await client.getVoiceRegions(guildId);
     } catch (err) {
         console.error(err);
     }
 
-    let region = guild.region;
+    let region = voiceChannel.rtcRegion;
+    if (region === null) {
+        region = 'Automatic';
+    }
 
     if (regions !== undefined) {
-        const findRegion = regions.get(region);
-        region = findRegion.name;
+        const findRegion = regions.find(reg => reg.id === region);
 
-        if (findRegion.deprecated) {
-            region += ' [Deprecated]';
-        }
+        if (findRegion) {
+            region = findRegion.name;
 
-        if (findRegion.vip) {
-            region += ' [VIP]';
+            if (findRegion.deprecated) {
+                region += ' [Deprecated]';
+            }
+
+            if (findRegion.vip) {
+                region += ' [VIP]';
+            }
         }
     }
 
-    await message.reply(`Current server region: ${region}`);
+    await messageReply(message, `Current voice channel region ${region} for channel: ${voiceChannel.name}`);
 };
 
 /**
  * Change voice region
+ *
+ * @param {eris.Message} message
+ * @param {Array<String>} params
  */
 cmds.v = async (message, params) => {
     const user = message.author;
-    const guild = message.guild;
+    const member = message.member;
+
+    if (!member) {
+        return;
+    }
+
+    const guildId = message.guildID;
+    const guild = client.guilds.get(guildId);
+
     let regions;
     try {
-        regions = await guild.fetchVoiceRegions();
+        regions = await client.getVoiceRegions(guildId);
     } catch (err) {
-        await message.reply(`Unable to get voice regions.`);
+        await messageReply(message, 'Unable to retrieve list of Discord voice regions.');
         console.error(err);
         return;
     }
@@ -263,32 +396,62 @@ cmds.v = async (message, params) => {
         '\n- '
     )}${codeTicks}\n\n**Usage:** \`!v region-id\``;
 
+    /**
+     * No region specified
+     * Assume the user wants a list of available regions.
+     */
     if (!selectedRegion) {
-        await message.reply(listRegions);
+        await messageReply(message, listRegions);
         return;
     }
 
-    const getRegion = regions.get(selectedRegion);
+    /**
+     * Invalid region
+     */
+    const getRegion = regions.find(reg => reg.id === selectedRegion);
     if (!getRegion) {
-        await message.reply('**Invalid region specified**\n' + listRegions);
+        await messageReply(message, `**Invalid region specified (${selectedRegion})**\n${listRegions}`);
+        return;
+    }
+
+    const voiceState = member.voiceState;
+    const voiceId = voiceState.channelID;
+
+    /**
+     * Not connected to voice channel
+     */
+    if (!voiceId) {
+        await messageReply(message, 'You are currently not connected to a voice channel. Connect to a voice channel and try again.');
+        return;
+    }
+
+    const voiceChannel = guild.channels.get(voiceId);
+    const cmd = 'v';
+    const cooldownAllow = checkCooldown(voiceId, cmd);
+    if (!cooldownAllow) {
+        console.log(
+            `${guild.name} (${guildId}) => ${voiceChannel.name} (${voiceId}) is still on cooldown, ignoring command: ${cmd}`
+        );
         return;
     }
 
     try {
-        await guild.setRegion(
-            getRegion.id,
-            `Voice region updated to ${selectedRegion} by ${user.username}#${user.discriminator}.`
-        );
+        const channelOpts = {
+            rtcRegion: selectedRegion,
+        };
+
+        await voiceChannel.edit(channelOpts, `Voice region updated to ${selectedRegion} by ${user.username}#${user.discriminator}.`);
 
         console.log(
-            `Voice region updated for ${guild.name} [${guild.id}] to ${selectedRegion} by ${user.username}#${user.discriminator}.`
+            `Voice region updated for ${guild.name} [${guild.id}] => ${voiceChannel.name} [${voiceId}] to ${selectedRegion} by ${user.username}#${user.discriminator}.`
         );
 
-        await message.reply(
-            `Voice region updated to: ${getRegion.name} [${getRegion.id}]`
+        await messageReply(
+            message,
+            `Voice region updated to ${getRegion.name} [${getRegion.id}] for channel: ${voiceChannel.name}`
         );
     } catch (err) {
-        await message.reply('Error updating region.');
+        await messageReply(message, 'Error updating voice region.');
 
         console.error(
             `Could not update voice region on server ${guild.name} [${guild.id}].`
@@ -299,10 +462,13 @@ cmds.v = async (message, params) => {
 };
 
 /**
- * Handle commands
+ * Handle commands (in general)
+ *
+ * @param {eris.Message} message https://abal.moe/Eris/docs/Message
  */
-client.on('message', async (message) => {
-    const content = message.cleanContent;
+async function handleCommands(message)
+{
+    const content = message.content;
     const cmdPrefix = content[0];
 
     if (cmdPrefix !== '!') {
@@ -328,27 +494,38 @@ client.on('message', async (message) => {
     }
 
     /**
-     * GuildMember does not have permission to move server regions.
+     * GuildMember does not have permission to move voice regions.
      */
     if (!canMoveRegion(member)) {
         return;
     }
 
-    const {guild} = message;
-    const guildId = guild.id;
-    const shouldExecute = await checkCooldown(guildId, cmd);
+    const guildId = message.guildID;
+    const shouldExecute = checkCooldown(guildId, cmd);
     if (!shouldExecute) {
         console.log(`${guild.name} (${guildId}) is still on cooldown, ignoring command: ${cmd}`);
         return;
     }
 
     await cmds[cmd](message, params);
-    await updateCooldown(guildId, cmd);
-});
+    updateCooldown(guildId, cmd);
+}
 
+/**
+ * Register message events
+ */
+client.on('messageCreate', handleCommands);
+client.on('messageCreate', handleRegionAliases);
+
+/**
+ * Exit/Shutdown handler
+ */
 process.on('SIGINT', async () => {
-    await client.destroy();
+    client.disconnect({
+        reconnect: false,
+    });
+
     process.exit(0);
 });
 
-client.login(config.Discord.token);
+client.connect();
