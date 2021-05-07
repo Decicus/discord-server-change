@@ -248,7 +248,10 @@ async function handleRegionAliases(message)
     const guild = client.guilds.get(guildId);
     const canBotMoveRegion = checkSelfPermissions(guild);
     if (!canBotMoveRegion) {
-        await messageReply(message, `The bot (${client.user.mention}) lacks the permissions to change server regions. Please assign the "Manage Channels" permission to the bot.`);
+        await messageReply(
+            message,
+            `The bot (${client.user.mention}) lacks the permissions to change server regions. Please assign the "Manage Channels" permission to the bot.\nIf you were previously using this bot with the "Manage Server" permission, you can remove that. The permission change is necessary because of a Discord update: https://support.discord.com/hc/en-us/articles/360060570993-Voice-Regions-Update`
+        );
         return;
     }
 
