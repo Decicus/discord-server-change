@@ -14,8 +14,7 @@ const config = {
          * Primarily used for testing.
          *
          * At the time of writing the ID put here is considered the "bot owner".
-         * The bot owner bypasses the following restrictions:
-         * - Per-channel cooldown restriction applied by the bot
+         * The bot owner currently bypasses the following restrictions:
          * - Permission check in `canMoveRegion()`
          *      - Which verifies the user has the correct Discord permissions in the server
          *
