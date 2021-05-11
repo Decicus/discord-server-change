@@ -393,7 +393,7 @@ cmds.region = async (message, params) => {
         }
     }
 
-    await messageReply(message, `Current voice channel region ${region} for channel: ${voiceChannel.name}`);
+    await messageReply(message, `Channel ${voiceChannel.name} is currently set to region: ${region}`);
 };
 
 /**
