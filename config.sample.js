@@ -11,6 +11,21 @@ const config = {
         allowEveryoneToMoveRegion: false,
 
         /**
+         * Primarily used for testing.
+         *
+         * At the time of writing the ID put here is considered the "bot owner".
+         * The bot owner bypasses the following restrictions:
+         * - Per-channel cooldown restriction applied by the bot
+         * - Permission check in `canMoveRegion()`
+         *      - Which verifies the user has the correct Discord permissions in the server
+         *
+         * The bot owner ID is the user ID/"snowflake" of a Discord user.
+         *
+         * @type {String}
+         */
+        botOwnerId: '',
+
+        /**
          * Add your Discord bot token here.
          */
         token: 'REPLACE_WITH_DISCORD_BOT_TOKEN',

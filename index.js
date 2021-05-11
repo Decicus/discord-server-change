@@ -16,9 +16,27 @@ const client = new eris(`Bot ${config.Discord.token}`, clientOpts);
  */
 const codeTicks = '```';
 
+/**
+ * Primarily used for testing.
+ * See description in config.sample.js for more information.
+ *
+ * @type {String}
+ */
+const botOwnerId = config.Discord.botOwnerId || '';
+
+/**
+ * Message to send when bot lacks the correct permissions to move voice regions.
+ */
+let botNoPermissionsMessage = '';
+
 client.on('ready', () => {
     const user = client.user;
     console.log(`Logged in as ${user.username}#${user.discriminator}`);
+
+    /**
+     * My jerry-rigged way of making sure `client.user.mention` is available...
+     */
+    botNoPermissionsMessage = `The bot (${client.user.mention}) lacks the permissions to change server regions. Please assign the "Manage Channels" permission to the bot.\n\nIf you were previously using this bot with the "Manage Server" permission, you can remove that. The permission change is necessary because of a Discord update: https://support.discord.com/hc/en-us/articles/360060570993-Voice-Regions-Update`;
 });
 
 /**
@@ -32,10 +50,16 @@ const aliases = {
     'usc': 'us-central',
     'uss': 'us-south',
     'eu': 'europe',
+    'sg': 'singapore',
+    'br': 'brazil',
+    'hk': 'hongkong',
     'ru': 'russia',
     'sy': 'sydney',
+    // au = Australia
+    'au': 'sydney',
     'in': 'india',
     'ja': 'japan',
+    'jp': 'japan',
     'auto': null,
 };
 
@@ -46,20 +70,45 @@ const aliases = {
  */
 const canMoveRegion = (member) => {
     /**
+     * Invalid member
+     */
+    if (!member) {
+        return false;
+    }
+
+    const memberId = member.id;
+    if (!memberId) {
+        return false;
+    }
+
+    const username = `${member.username}#${member.discriminator}`;
+    const guild = member.guild;
+
+    /**
+     * Bot owner has permission.
+     */
+    if (memberId === botOwnerId) {
+        console.log(`[Bot Owner Override] Permit user '${username}' (${memberId}) in server '${guild.name}' (${guild.id})`);
+        return true;
+    }
+
+    /**
      * Config flag:
      * Allows everyone in the server to move server region.
+     *
+     * Defaults to `false`
      */
     const everyoneCanMove = config.Discord.allowEveryoneToMoveRegion || false;
 
     /**
      * Check if the guild member has the `Administrator` permission.
      */
-    const isAdmin = member.permissions.has(Permissions.administrator);
+    const isAdmin = member.permissions.has('administrator');
 
     /**
      * .. or if they're the server owner.
      */
-    const isOwner = member.id === member.guild.ownerID;
+    const isOwner = memberId === member.guild.ownerID;
 
     /**
      * Checks for the "Manage Channels" permission.
@@ -67,19 +116,15 @@ const canMoveRegion = (member) => {
      * At the moment this does not check for permissions that are set on channels/categories
      * only 'globally' in the guild.
      */
-    const canManageChannels = member.permissions.has(Permissions.manageChannels);
+    const canManageChannels = member.permissions.has('manageChannels');
 
     const hasGuildPermission = canManageChannels || isAdmin || isOwner;
     if (everyoneCanMove) {
         /**
          * The user only has permission to move regions because of `Discord.allowEveryoneToMoveRegion`
-         *
          */
         if (!hasGuildPermission) {
-            const username = `${member.username}#${member.discriminator}`;
-            const guild = member.guild;
-
-            console.log(`[AllowEveryoneToMoveRegion] Permit user '${username}' (${user.id}) in server '${guild.name}' (${guild.id})`);
+            console.log(`[AllowEveryoneToMoveRegion] Permit user '${username}' (${memberId}) in server '${guild.name}' (${guild.id})`);
         }
 
         return true;
@@ -102,11 +147,6 @@ const cooldowns = {};
  * Minimum time between commands
  */
 const minimumSeconds = 2;
-
-/**
- * Message to send when bot lacks the correct permissions to move voice regions.
- */
-const botNoPermissionsMessage = `The bot (${client.user.mention}) lacks the permissions to change server regions. Please assign the "Manage Channels" permission to the bot.\nIf you were previously using this bot with the "Manage Server" permission, you can remove that. The permission change is necessary because of a Discord update: https://support.discord.com/hc/en-us/articles/360060570993-Voice-Regions-Update`;
 
 /**
  * Helper function for replying to messages.
@@ -144,7 +184,7 @@ async function messageReply(message, text)
 function checkSelfPermissions(guild)
 {
     const permissions = guild.permissionsOf(client.user.id);
-    return permissions.has(Permissions.manageChannels) || permissions.has(Permissions.administrator);
+    return permissions.has('manageChannels') || permissions.has('administrator');
 }
 
 /**
@@ -218,9 +258,10 @@ async function handleRegionAliases(message)
     const validAliases = Object.keys(aliases);
 
     /**
-     * No region alias found
+     * Not a valid region alias found, ignoring command.
+     * Not posting a message, in case it's meant for a different bot.
      */
-    if (validAliases.includes(alias)) {
+    if (!validAliases.includes(alias)) {
         return;
     }
 
@@ -246,7 +287,7 @@ async function handleRegionAliases(message)
     const voiceState = member.voiceState;
     const voiceChannelId = voiceState.channelID;
     if (!voiceChannelId) {
-        await messageReply(message, `You are currently not connected to a voice channel.`);
+        await messageReply(message, 'You are currently not connected to a voice channel.');
         return;
     }
 
@@ -277,14 +318,19 @@ async function handleRegionAliases(message)
         rtcRegion: region,
     };
 
+    /**
+     * Alias `&auto` is set to `null`
+     * Therefore we fall back to "Automatic"
+     */
+    const regionName = region || 'Automatic';
     try {
-        await voiceChannel.edit(channelSettings, `Voice region updated to ${region} by ${user.username}#${user.discriminator}.`);
-        console.log(`Voice region updated for ${guild.name} [${guild.id}] => ${voiceChannel.name} [${voiceChannelId}] to ${region} by ${user.username}#${user.discriminator}.`);
-        await messageReply(message, ` Voice region updated to ${region} for channel: ${voiceChannel.name}`);
+        await voiceChannel.edit(channelSettings, `Voice region updated to ${regionName} by ${user.username}#${user.discriminator}.`);
+        console.log(`Voice region updated for ${guild.name} [${guild.id}] => ${voiceChannel.name} [${voiceChannelId}] to ${regionName} by ${user.username}#${user.discriminator}.`);
+        await messageReply(message, ` Voice region updated to ${regionName} for channel: ${voiceChannel.name}`);
     }
     catch (err) {
         await messageReply(message, `Error updating region.`);
-        console.error(`Could not update voice region on server ${guild.name} [${guild.id}] => ${voiceChannel.name} [${voiceChannelId}] to ${region}.`);
+        console.error(`Could not update voice region on server ${guild.name} [${guild.id}] => ${voiceChannel.name} [${voiceChannelId}] to ${regionName}.`);
         console.error(err);
     }
 
