@@ -10,7 +10,7 @@ The bot requires, at minimum, `Manage Channels` permission to change the voice c
 You have two choices:
 
 - If you have the technical knowhow, [set it up yourself](#setup) and host it yourself.
-- Invite the public bot (`Server Changer#1071`) to your server: [Click here to invite](https://discord.com/oauth2/authorize?client_id=635912849440505886&scope=bot&permissions=32)
+- Invite the public bot (`Server Changer#1071`) to your server: [Click here to invite](https://discord.com/oauth2/authorize?client_id=635912849440505886&scope=bot&permissions=16)
 
 ## Setup
 
@@ -49,7 +49,7 @@ Keep in mind that commands will only work inside a text channel on the server.
 Sending the bot a _direct message_ will **not** work.
 
 The user running the command will also need to be connected to the voice channel they would like to change regions for.  
-In the future the bot will allow typing part of the channel name, as long as the "part" matches only one channel.
+In the future the bot will allow typing part of the channel name, as long as the "part" matches only one channel, but the initial 2.0.0 release will only work if you're connected to a voice channel.
 
 ### Display current server region
 
@@ -75,10 +75,16 @@ In the future the bot will allow typing part of the channel name, as long as the
 &usc => us-central
 &uss => us-south
 &eu => europe
+&sg => singapore
+&br => brazil
+&hk => hongkong
 &ru => russia
 &sy => sydney
+&au => sydney
 &in => india
 &ja => japan
+&jp => japan
+&auto => "Automatic"
 ```
 
 ### List available regions
@@ -89,25 +95,26 @@ In the future the bot will allow typing part of the channel name, as long as the
 
 ```
 @Decicus, Available regions - 'Region name [Region ID]':
-- Central Europe [eu-central] [Deprecated!]
-- India [india]
-- London [london] [Deprecated!]
-- Japan [japan]
-- Amsterdam [amsterdam] [Deprecated!]
-- Brazil [brazil]
 - US West [us-west]
-- Hong Kong [hongkong]
+- US East [us-east]
+- US Central [us-central]
+- US South [us-south]
+- Singapore [singapore]
 - South Africa [southafrica]
 - Sydney [sydney]
 - Europe [europe]
-- Singapore [singapore]
-- US Central [us-central]
-- Western Europe [eu-west] [Deprecated!]
-- Dubai [dubai] [Deprecated!]
-- US South [us-south]
-- US East [us-east]
-- Frankfurt [frankfurt] [Deprecated!]
+- Brazil [brazil]
+- Hong Kong [hongkong]
 - Russia [russia]
+- Japan [japan]
+- India [india]
+- Dubai [dubai] [Deprecated!]
+- Atlanta [atlanta] [Deprecated!]
+- Amsterdam [amsterdam] [Deprecated!]
+- London [london] [Deprecated!]
+- Frankfurt [frankfurt] [Deprecated!]
+- Central Europe [eu-central] [Deprecated!]
+- Western Europe [eu-west] [Deprecated!]
 
 
 Usage => !v region-id
