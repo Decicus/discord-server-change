@@ -10,7 +10,10 @@ The bot requires, at minimum, `Manage Channels` permission to change the voice c
 You have two choices:
 
 - If you have the technical knowhow, [set it up yourself](#setup) and host it yourself.
-- Invite the public bot (`Server Changer#1071`) to your server: [Click here to invite](https://discord.com/oauth2/authorize?client_id=635912849440505886&scope=bot&permissions=16)
+- Invite **one** of the public bots to your server:
+    - [Recommended for public servers] Users with the `Manage Channels` or `Administrator` permissions in the server can change regions: [Click to invite (Server Changer#1071)](https://discord.com/oauth2/authorize?client_id=635912849440505886&scope=bot&permissions=16)
+    - **Any user** in the server can change regions: [Click to invite (Server Changer [Everyone]#1557)](https://discord.com/oauth2/authorize?client_id=858334079539740683&scope=bot&permissions=16)
+        - I do not recommend using this bot at all in a public server and only for small servers for friend groups (and similar).
 
 ## Setup
 
