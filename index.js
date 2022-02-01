@@ -49,7 +49,7 @@ const aliases = {
     'usw': 'us-west',
     'usc': 'us-central',
     'uss': 'us-south',
-    'eu': 'europe',
+    'eu': 'rotterdam',
     'sg': 'singapore',
     'br': 'brazil',
     'hk': 'hongkong',

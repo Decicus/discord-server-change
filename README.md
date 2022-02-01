@@ -77,7 +77,7 @@ In the future the bot will allow typing part of the channel name, as long as the
 &usw => us-west
 &usc => us-central
 &uss => us-south
-&eu => europe
+&eu => rotterdam
 &sg => singapore
 &br => brazil
 &hk => hongkong
@@ -99,25 +99,18 @@ In the future the bot will allow typing part of the channel name, as long as the
 ```
 @Decicus, Available regions - 'Region name [Region ID]':
 - US West [us-west]
-- US East [us-east]
-- US Central [us-central]
-- US South [us-south]
+- Brazil [brazil]
+- Hong Kong [hongkong]
+- India [india]
+- Japan [japan]
+- Rotterdam [rotterdam]
+- Russia [russia]
 - Singapore [singapore]
 - South Africa [southafrica]
 - Sydney [sydney]
-- Europe [europe]
-- Brazil [brazil]
-- Hong Kong [hongkong]
-- Russia [russia]
-- Japan [japan]
-- India [india]
-- Dubai [dubai] [Deprecated!]
-- Atlanta [atlanta] [Deprecated!]
-- Amsterdam [amsterdam] [Deprecated!]
-- London [london] [Deprecated!]
-- Frankfurt [frankfurt] [Deprecated!]
-- Central Europe [eu-central] [Deprecated!]
-- Western Europe [eu-west] [Deprecated!]
+- US Central [us-central]
+- US East [us-east]
+- US South [us-south]
 
 
 Usage => !v region-id
