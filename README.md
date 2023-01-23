@@ -1,3 +1,7 @@
+# ⚠ This project is no longer maintained ⚠
+
+See this issue comment for more information: https://github.com/Decicus/discord-server-change/issues/11#issuecomment-1384293201
+
 # discord-server-change
 
 This is a quick-and-dirty implementation of a bot that allows you to easily change voice server region with commands.  
